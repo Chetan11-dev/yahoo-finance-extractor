@@ -1,6 +1,10 @@
 import { BrowserWindow, Menu, MenuItemConstructorOptions } from 'electron';
 import { isDev } from 'botasaurus-server/env';
-import { buildMacTemplate, buildDefaultTemplate,MacMenuItemConstructorOptions } from './utils/menu-utils';
+import {
+  buildMacTemplate,
+  buildDefaultTemplate,
+  MacMenuItemConstructorOptions,
+} from './utils/menu-utils';
 import { config } from './config';
 import { getSupportSubMenu } from './support-sub-menu';
 
@@ -22,11 +26,10 @@ export default class MenuBuilder {
       this.setupDevelopmentEnvironment();
     }
 
-    const isMac = process.platform === 'darwin'
-    const template =
-    isMac
-        ? buildMacTemplate(getIsDev(), config.productName, this.mainWindow)
-        : buildDefaultTemplate(getIsDev(), this.mainWindow);
+    const isMac = process.platform === 'darwin';
+    const template = isMac
+      ? buildMacTemplate(getIsDev(), config.productName, this.mainWindow)
+      : buildDefaultTemplate(getIsDev(), this.mainWindow);
 
     const subMenuHelp: MacMenuItemConstructorOptions = {
       label: 'Support',
