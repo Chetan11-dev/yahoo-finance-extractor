@@ -1,4 +1,4 @@
-export const apiConfig = {
+export const appProps = {
     "header_title": "Botasaurus",
     "description": "Build Awesome Scrapers with Botasaurus, The All in One Scraping Framework.",
     "right_header": {
@@ -11,6 +11,7 @@ export const apiConfig = {
         {
             "name": "Stock Price Scraper",
             "scraper_name": "stockPriceScraper",
+            "route_path": "stock-price-scraper",
             "input_js": "/**\n * @typedef {import('botasaurus-controls').Controls} Controls\n * \n */\n\n/**\n * @param {Controls} controls\n */\nfunction getInput(controls) {\n    controls\n        // Render a Text Input\n        .text('stock_symbol', { \n            isRequired: true, \n            label: 'Stock Symbol', \n            placeholder: 'Enter a stock symbol (e.g., AAPL)', \n            defaultValue: 'AAPL' \n        });\n}",
             "input_js_hash": "ae14717cd467d515440c92ad377696d7",
             "filters": [],
@@ -21,11 +22,13 @@ export const apiConfig = {
                 }
             ],
             "views": [],
-            "default_sort": "no_sort"
+            "default_sort": "no_sort",
+            "max_runs": 1
         },
         {
             "name": "Amazon Pdf Extractor",
             "scraper_name": "amazonPdfExtractor",
+            "route_path": "amazon-pdf-extractor",
             "input_js": "/**\n * @typedef {import('botasaurus-controls').Controls} Controls\n * @typedef {import('botasaurus-controls').FileTypes} FileTypes\n * \n */\n\nconst { FileTypes } = {\"FileTypes\":{\"IMAGE\":[\"jpeg\",\"jpg\",\"png\",\"gif\",\"bmp\",\"svg\",\"webp\"],\"EXCEL\":[\"xls\",\"xlsx\"],\"AUDIO\":[\"mp3\",\"wav\",\"ogg\",\"m4a\",\"flac\"],\"CSV\":[\"csv\"],\"PDF\":[\"pdf\"],\"ZIP\":[\"zip\"],\"VIDEO\":[\"mp4\",\"avi\",\"mov\",\"wmv\",\"flv\",\"mkv\"]}}/**\n * @param {Controls} controls\n */\nfunction getInput(controls) {\n    // Render a File Input for uploading PDFs\n        controls.filePicker('files', {\n          label:\"Files\",\n          accept: FileTypes.PDF, \n          isRequired: true,\n      })\n          \n  }",
             "input_js_hash": "d2fafb007820df0bda0512002eb6102b",
             "filters": [],
@@ -36,7 +39,8 @@ export const apiConfig = {
                 }
             ],
             "views": [],
-            "default_sort": "no_sort"
+            "default_sort": "no_sort",
+            "max_runs": null
         }
     ]
 }

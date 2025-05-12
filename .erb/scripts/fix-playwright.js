@@ -2,29 +2,29 @@ const fs = require('fs');
 const path = require('path');
 
 const find = `async function installAppIcon(page) {
-  const icon = await _fs.default.promises.readFile(require.resolve('./chromium/appIcon.png'));
+  const icon = await import_fs.default.promises.readFile(require.resolve("./chromium/appIcon.png"));
   const crPage = page._delegate;
-  await crPage._mainFrameSession._client.send('Browser.setDockTile', {
-    image: icon.toString('base64')
+  await crPage._mainFrameSession._client.send("Browser.setDockTile", {
+    image: icon.toString("base64")
   });
 }`
 const replacement = `async function installAppIcon(page) {
-  // const icon = await _fs.default.promises.readFile(require.resolve('./chromium/appIcon.png'));
+  // const icon = await import_fs.default.promises.readFile(require.resolve("./chromium/appIcon.png"));
   // const crPage = page._delegate;
-  // await crPage._mainFrameSession._client.send('Browser.setDockTile', {
-  //   image: icon.toString('base64')
+  // await crPage._mainFrameSession._client.send("Browser.setDockTile", {
+  //   image: icon.toString("base64")
   // });
 }`
 
-const find1 = `var bidiMapper = _interopRequireWildcard(require("chromium-bidi/lib/cjs/bidiMapper/BidiMapper"));
-var bidiCdpConnection = _interopRequireWildcard(require("chromium-bidi/lib/cjs/cdp/CdpConnection"));
+const find1 = `var bidiMapper = __toESM(require("chromium-bidi/lib/cjs/bidiMapper/BidiMapper"));
+var bidiCdpConnection = __toESM(require("chromium-bidi/lib/cjs/cdp/CdpConnection"));
 `
 const replacement1 = `var bidiMapper = null;
 var bidiCdpConnection =  null;
 `
 
 function replaceAppWithSrc() {
-    const dirPath = path.join('.', 'node_modules', 'playwright-core');
+    const dirPath = path.join('.', 'node_modules', 'rebrowser-playwright-core');
     ;
 
     if (!fs.existsSync(dirPath)) {
@@ -37,7 +37,7 @@ function replaceAppWithSrc() {
         
         modifyContentAndWriteToFile(path.join(dirPath, 'lib', 'server', 'launchApp.js'), find, replacement)
         modifyContentAndWriteToFile(path.join(dirPath, 'lib', 'server', 'bidi','bidiOverCdp.js'), find1, replacement1)
-        // node_modules/playwright-core/lib/server/bidi/bidiOverCdp.js
+        // node_modules/rebrowser-playwright-core/lib/server/bidi/bidiOverCdp.js
         // .replace(find1, replacement1);
 
         console.log('Successfully replaced');
