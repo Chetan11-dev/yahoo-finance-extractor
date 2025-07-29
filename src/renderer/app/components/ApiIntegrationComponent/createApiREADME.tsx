@@ -143,6 +143,11 @@ function joinStrings(strings: string[], separator: string = 'or'): string {
     return `${joinedStrings} ${separator} ${lastElement}`
   }
 }
+
+function humaniseRoutes(final: string[]) {
+  return joinStrings(final.map(item => `\`${item}\``))
+}
+
 function createSortString(sorts: any[], defaultSort: string): string {
   return `\n sort: null, // sort can be one of: ${joinStrings(sorts.map((view) => {
     if (view.id === defaultSort) {
@@ -244,8 +249,44 @@ fs.writeFileSync(filename, buffer)
 \`\`\``
   }
 }
-function makeAPI(baseUrl) {
-  return `const api = ${baseUrl ? `new Api({ apiUrl: '${baseUrl}' })` : "new Api()"}`
+
+function makeResponseFn(baseUrl: string, apiBasePath: string) {
+  if (baseUrl && apiBasePath) {
+    return `new Api({
+  apiUrl: '${baseUrl}',
+  apiBasePath: '${apiBasePath}',
+  createResponseFiles: false,
+})`
+  } else if (baseUrl) {
+    return `new Api({
+  apiUrl: '${baseUrl}',
+  createResponseFiles: false,
+})`
+  } else if (apiBasePath) {
+    return `new Api({
+  apiBasePath: '${apiBasePath}',
+  createResponseFiles: false,
+})`
+  } else {
+    return `new Api({ createResponseFiles: false })`
+  }
+}
+
+function makeAPI(baseUrl, apiBasePath) {
+  const config: string[] = []
+
+  if (baseUrl) {
+    config.push(`apiUrl: '${baseUrl}'`)
+  }
+
+  if (apiBasePath) {
+    config.push(`apiBasePath: '${apiBasePath}'`)
+  }
+  
+  config.push(`createResponseFiles: true`)
+
+
+  return config.length > 0 ? `const api = new Api({ ${config.join(', ')} })` : 'const api = new Api()'
 }
 export function createApiREADME(
   baseUrl: string,
@@ -256,21 +297,28 @@ export function createApiREADME(
   filters: any[],
   views: any[],
   defaultSort: string,
-  route_path:string,
-  max_runs: number | null): string {
-    const maxRunsMessage = max_runs === null
+  route_path: string,
+  max_runs: number | null,
+  apiBasePath: string, 
+  routeAliases:string[],
+  enable_cache: boolean
+): string {
+  const maxRunsMessage = max_runs === null
     ? "This scraper supports unlimited concurrent tasks."
     : max_runs === 1
       ? "You can run only **1** task of this scraper concurrently."
-      : `You can run up to **${max_runs}** tasks of this scraper concurrently.`
+      : `You can run up to **${max_runs}** tasks of this scraper concurrently.`;
 
-      
-      
-    const maxRunsMessage2 = max_runs === null
+  const maxRunsMessage2 = max_runs === null
     ? "Allow unlimited concurrent runs of this scraper."
     : max_runs === 1
       ? "Allow only **1** concurrent run of this scraper."
-      : `Allow up to **${max_runs}** concurrent runs of this scraper.`
+      : `Allow up to **${max_runs}** concurrent runs of this scraper.`;
+
+  const route_path_cleaned = `/${route_path}`
+  const final = routeAliases.concat([route_path_cleaned])
+
+  const humanFinal = humaniseRoutes(final)
 
   return `# API Integration
 
@@ -292,28 +340,22 @@ npm install botasaurus-desktop-api
 First, import the \`Api\` class from the library:
 
 \`\`\`javascript
-import { Api } from 'botasaurus-desktop-api'
+import Api from 'botasaurus-desktop-api'
 
 \`\`\`
 Then, create an instance of the \`Api\` class:
 
 \`\`\`javascript
 async function main() {
-  ${makeAPI(baseUrl)}
+  ${makeAPI(baseUrl, apiBasePath)}
 }
 
 main()
 \`\`\`
 
-Additionally, the API client will create response JSON files in the \`output/responses/\` directory to help with debugging and development. If you want to disable this feature in production, you can set \`createResponseFiles=false\`.
+Additionally, the API client will create response JSON files in the \`output/responses/\` directory to help with debugging and development.
 
-\`\`\`javascript
-const api = ${baseUrl ? `new Api({
-  apiUrl: '${baseUrl}',
-  createResponseFiles: false,
-})` : "new Api({ createResponseFiles: false })"}
-
-\`\`\`
+In production, remove the \`createResponseFiles: true\` parameter.
 
 ### Creating Tasks
 
@@ -387,23 +429,22 @@ await api.deleteTasks({ taskIds: [4, 5, 6] })
 
 ## Direct Call (Bypassing Task System)
 
-If you prefer a lightweight, immediate way to run the scraper without the overhead of creating, scheduling, and running tasks, you can make a direct \`GET\` request to the \`/${route_path}\` endpoint.
+If you prefer a lightweight, immediate way to run the scraper without the overhead of creating, scheduling, and running tasks, you can make a direct \`GET\` request to the ${humanFinal} endpoint.
 
 
 \`\`\`javascript
-const result = await api.get('${route_path}', ${jsObjectToJsObjectString(defaultData)})
+const result = await api.get('${final[0]}', ${jsObjectToJsObjectString(defaultData)})
 
 \`\`\`
 This will:
-- Make a **GET** request to the \`/${route_path}\` endpoint.
-- Bypass task creation, scheduling, and running overhead.
-- Validate the input data before execution.
-- Cache the results based on the provided parameters.
-- ${maxRunsMessage2}
+- Make a **GET** request to the \`${final[0]}\` endpoint.
+- Execute the scraper immediately, bypassing task creation, scheduling, and running overhead.
+- Validate input data before execution, returning a \`400\` error for invalid requests.
+${enable_cache ? '- Cache the results based on the provided parameters.\n' : ''}- ${maxRunsMessage2}
 
 This method is especially useful when:
 
-- You simply want to call the scraper and get the result.
+- You simply want to call the scraper and get the result, without the task management overhead.
 - You plan to resell the API via platforms like **RapidAPI**, where the task abstraction is unnecessary.
 
 ## Examples
@@ -412,11 +453,11 @@ Here are some example usages of the API client:
 
 \`\`\`javascript
 import fs from 'fs'
-import { Api } from 'botasaurus-desktop-api'
+import Api from 'botasaurus-desktop-api'
 
 async function main() {
   // Create an instance of the API client
-  ${makeAPI(baseUrl)}
+  ${makeAPI(baseUrl, apiBasePath)}
 
   // Create a synchronous task
   const data = ${jsObjectToJsObjectString(defaultData, defaultIndentation, 2)}

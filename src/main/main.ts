@@ -3,13 +3,14 @@ import './config'
 import { generateAppProps } from './utils/generate-app-props'
 import { app, BrowserWindow, powerSaveBlocker, shell } from 'electron'
 import path from 'path'
-import { setUpRendererToServerCall } from './utils/set-up-renderer-to-server-call'
+import { addRoutesHandler, setUpRendererToServerCall } from './utils/set-up-renderer-to-server-call'
 import { isDev } from 'botasaurus-server/env'
 import { initAutoIncrementDb } from 'botasaurus-server/models'
-import {getAssetPath, resolveHtmlPath, enableElectronDebugTools, registerDeepLinkProtocol, restoreAndFocusMainWindow, getApiArgs, getAPI, startServer, stopServer } from './utils/electron-utils'
+import {getAssetPath, resolveHtmlPath, enableElectronDebugTools, registerDeepLinkProtocol, restoreAndFocusMainWindow, getApiArgs, getAPI, startServer, stopServer, createRouteAliasesObj } from './utils/electron-utils'
 import MenuBuilder from './menu'
 import { onClose } from "botasaurus/on-close";
 import { getWindow, setWindow } from './utils/window'
+import scraperToInputJs from './utils/scraper-to-input-js'
 import run from 'botasaurus-server/run';
 import { Server } from 'botasaurus-server/server';
 
@@ -65,7 +66,7 @@ process.on('uncaughtException', exitHandler.bind(null, {exit:true}));
 
 function runAppAndApi() {
   const API = getAPI()
-  let { port, onlyRunApi, hasServerArguments } = getApiArgs()
+  let { port, onlyRunApi, hasServerArguments, apiBasePath} = getApiArgs()
   let finalPORT:number
   let onQuit
   if (API) {
@@ -76,18 +77,19 @@ function runAppAndApi() {
        
        return runAppWithoutWindow(onQuit, () => {
         closeServerOnExit()
-        startServer(finalPORT, Server.getScrapersConfig())
+        return startServer(finalPORT, Server.getScrapersConfig(), apiBasePath || API.apiBasePath, createRouteAliasesObj(API), Server.cache)
       })
     }
   } else if (hasServerArguments) {
-    throw new Error('Kindly enable the server following https://github.com/microsoft/playwright/issues/13288 before passing server arguments')
+    console.error('Kindly enable the API in "api-config.ts" before passing API arguments.');
+    app.exit(1);
   }
   runApp(onQuit, () => {
     if (API) {
       closeServerOnExit()
       ipcMain.on('start-server', () => {
         getBotasaurusStorage().setItem('shouldStartServer', true)
-        startServer(finalPORT, Server.getScrapersConfig())
+        startServer(finalPORT, Server.getScrapersConfig(), apiBasePath || API.apiBasePath, createRouteAliasesObj(API), Server.cache)
       })
 
       ipcMain.on('stop-server', () => {
@@ -95,9 +97,9 @@ function runAppAndApi() {
         stopServer()
       })
         const shouldStartServer = getBotasaurusStorage().getItem('shouldStartServer', API.autoStart)
-        ipcMain.send('server-state', { isRunning: shouldStartServer, port: finalPORT })
+        ipcMain.send('server-state', { isRunning: shouldStartServer, port: finalPORT,  apiBasePath: apiBasePath || API.apiBasePath, routeAliases:createRouteAliasesObj(API) })
         if (shouldStartServer) {
-          startServer(finalPORT, Server.getScrapersConfig())
+          startServer(finalPORT, Server.getScrapersConfig(), apiBasePath || API.apiBasePath, createRouteAliasesObj(API), Server.cache)
       }
 
     }
@@ -118,9 +120,10 @@ const createWindow = async (onWindowMade, runFn) => {
     },
   })
   setWindow(mainWindow)
-  mainWindow.loadURL(resolveHtmlPath('index.html'))
-  setUpRendererToServerCall()
+  addRoutesHandler()
   
+  mainWindow.loadURL(resolveHtmlPath('index.html'))
+  setUpRendererToServerCall()  
 
   mainWindow.on('ready-to-show', () => {
     if (!getWindow()) {
@@ -154,6 +157,21 @@ const createWindow = async (onWindowMade, runFn) => {
   AppUpdater.init()
 }
 
+async function initDbAndExecutor(onReady) {
+  
+      await initAutoIncrementDb()
+      // Set the scraper input functions
+      Server.setScraperToInputJs(scraperToInputJs); 
+      await run()
+      if (onReady) {
+        await onReady()  
+      }
+      
+      // Remove this if your app does not use auto updates
+      // eslint-disable-next-line
+      AppUpdater.init()
+  
+}
 function runApp(onQuit, onWindowMade) {
   registerDeepLinkProtocol()
   app.on('second-instance', (event, commandLine, workingDirectory) => {
@@ -181,8 +199,7 @@ function runApp(onQuit, onWindowMade) {
     .whenReady()
     .then(() => {
       createWindow(onWindowMade, () => {
-        run()
-        initAutoIncrementDb()
+        return initDbAndExecutor(null)
       })
       powerSaveId = powerSaveBlocker.start('prevent-app-suspension')
 
@@ -220,9 +237,7 @@ function runAppWithoutWindow(onQuit, onReady) {
   app
     .whenReady()
     .then(() => {
-      run()
-      initAutoIncrementDb()
-      onReady()
+      initDbAndExecutor(onReady)
 
       powerSaveId = powerSaveBlocker.start('prevent-app-suspension')
 

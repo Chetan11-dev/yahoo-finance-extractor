@@ -121,6 +121,7 @@ const TaskComponent = ({
   views,
   default_sort,
   response: initialResponse,
+  productName,
   taskId,
 }) => {
   const functionsRef = useRef<any[]>([]);
@@ -156,6 +157,9 @@ const TaskComponent = ({
   const filter_data = pageAndView.filter_data
 
   const onDownload = async data => {
+  function isObject(value: any): value is Record<string, any> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }    
     const params = {
       sort,
       filters: clean_filter_data(filter_data, filters),
@@ -163,16 +167,26 @@ const TaskComponent = ({
       ...data,
     }
     const output_path = (await Api.downloadTaskResults(taskId, params)).data
-    // @ts-ignore
-    const {hide} = cogoToast.success('Successfully downloaded. Click to open in folder.', {
-      hideAfter:10, 
-      position: 'bottom-right',
-      onClick: async () => {
-        await Api.openInFolder(output_path)
-        hide!();
-      },
-    });
-    addFunction(hide)
+    if (isObject(output_path) && output_path.error === 'PATH_NOT_EXISTS') {
+      const pt = output_path.path
+
+      const {hide} = cogoToast.error(`The folder at "${pt}" doesn't exist. Please change the download folder location.`, {
+        hideAfter: 5,
+        position: 'bottom-right'
+      });
+      addFunction(hide)
+    } else {
+      // @ts-ignore
+      const {hide} = cogoToast.success('Successfully downloaded. Click to open in folder.', {
+        hideAfter:10, 
+        position: 'bottom-right',
+        onClick: async () => {
+          await Api.openInFolder(output_path)
+          hide!();
+        },
+      });
+      addFunction(hide)
+    }
   }
 
   // For Filters
@@ -331,7 +345,7 @@ const TaskComponent = ({
     <>
       <OutputTabsContainer>
         <div className='space-y-6 '>
-          <Link href={`/output`} passHref>
+          <Link href={`/tasks`} passHref>
             <EuiLink>View All Tasks</EuiLink>
           </Link>
           {can_sort_filter && (is_large ? 
@@ -369,6 +383,7 @@ const TaskComponent = ({
             )}
             {
               <DownloadStickyBar
+                productName={productName}
                 showPagination={showPagination}
                 onDownload={onDownload}
               />
