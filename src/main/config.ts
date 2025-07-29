@@ -14,7 +14,7 @@ export const config = {
   productName: app ? app.getName() : getProductNameFromPackageJson(),
   downloadsPath: app ? app.getPath('downloads') : process.cwd(),
   userDataPath: app ? app.getPath('userData') : process.cwd(),
-  protocol: 'todo-my-app-name',
+  protocol: 'yahoo-finance-extractor',
   isDev: isDev,
 };
 

@@ -1,7 +1,7 @@
 {
-  "name": "todo-my-app-name",
+  "name": "yahoo-finance-extractor",
   "version": "1.0.0",
-  "description": "Todo my app description",
+  "description": "Extract real-time stock prices from Yahoo Finance quickly and accurately.",
   "license": "MIT",
   "main": "./dist/main/main.js",
   "scripts": {

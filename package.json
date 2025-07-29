@@ -1,7 +1,7 @@
 {
-  "name": "todo-my-app-name",
-  "productName": "Todo My App Name",
-  "description": "Todo my app description",
+  "name": "yahoo-finance-extractor",
+  "productName": "Yahoo Finance Extractor",
+  "description": "Extract real-time stock prices from Yahoo Finance quickly and accurately.",
   "author": "Todo My Organization Name <todo-my-email@gmail.com>",
   "license": "MIT",
   "main": "./.erb/dll/main.bundle.dev.js",
@@ -137,13 +137,13 @@
     "webpack-merge": "^5.9.0"
   },
   "build": {
-    "productName": "Todo My App Name",
-    "appId": "com.todo-my-organization-name.todo-my-app-name",
+    "productName": "Yahoo Finance Extractor",
+    "appId": "com.todo-my-organization-name.yahoo-finance-extractor",
     "protocols": [
       {
-        "name": "Todo My App Name",
+        "name": "Yahoo Finance Extractor",
         "schemes": [
-          "todo-my-app-name"
+          "yahoo-finance-extractor"
         ]
       }
     ],
@@ -222,7 +222,7 @@
     ],
     "publish": {
       "provider": "s3",
-      "bucket": "todo-my-bucket-name"
+      "bucket": "yahoo-finance-extractor"
     }
   },
   "electronmon": {

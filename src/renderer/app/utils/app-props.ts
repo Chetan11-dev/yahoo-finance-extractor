@@ -41,5 +41,5 @@ export const appProps = {
             "max_runs": null
         }
     ],
-    "productName": "Todo My App Name"
+    "productName": "Yahoo Finance Extractor"
 }
