@@ -2,7 +2,7 @@ import { playwright } from 'botasaurus/playwright';
 
 const stockPriceScraper = playwright<any>({
   // Run the scraper opening a browser window
-  headless: false,
+  headless: true,
   // Reuse the browser instance for multiple tasks
   reuseDriver: true,
   // Name the scraper for Botasaurus to find inputs
